@@ -8,6 +8,7 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Scanner;
 
 public class Main {
@@ -18,7 +19,15 @@ public class Main {
         // Get user input for the desired field
         Scanner scanner = new Scanner(System.in);
         System.out.print("Enter the field name to extract: ");
-        String fieldName = scanner.nextLine();
+        String fieldName = scanner.nextLine().trim();
+        
+        // Ensure the field name is not empty
+        if (fieldName.isEmpty()) {
+            System.out.println("Field name cannot be empty. Please provide a valid field name.");
+            scanner.close();
+            return;
+        }
+
         scanner.close();
 
         // Parse the XML file and extract the desired fields
@@ -47,20 +56,30 @@ public class Main {
                     // Get the element by tag name
                     NodeList fieldNodes = recordElement.getElementsByTagName(fieldName);
 
-                    // Add the field values to the JSONObject
+                    // Check if the field exists
                     if (fieldNodes.getLength() > 0) {
                         JSONObject jsonObject = new JSONObject();
                         for (int j = 0; j < fieldNodes.getLength(); j++) {
                             jsonObject.put(fieldName + (j + 1), fieldNodes.item(j).getTextContent());
                         }
                         jsonArray.put(jsonObject);
+                    } else {
+                        System.out.println("Field '" + fieldName + "' not found in record " + (i + 1));
                     }
                 }
             }
 
-            // Print the JSONArray in JSON format
-            System.out.println(jsonArray.toString(4)); // Indent with 4 spaces for readability
+            // Check if any records were found
+            if (jsonArray.length() > 0) {
+                // Print the JSONArray in JSON format
+                System.out.println(jsonArray.toString(4)); // Indent with 4 spaces for readability
+            } else {
+                System.out.println("No records found for the field: " + fieldName);
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("The file '" + fileName + "' was not found.");
         } catch (Exception e) {
+            System.out.println("An error occurred while processing the XML file: " + e.getMessage());
             e.printStackTrace();
         }
     }
