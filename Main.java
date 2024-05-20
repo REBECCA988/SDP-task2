@@ -1,13 +1,13 @@
-import java.io.File;
-import java.io.IOException;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
 import java.util.Scanner;
 
 public class Main {
@@ -28,24 +28,40 @@ public class Main {
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document = builder.parse(new File(fileName));
 
-            // Normalize the document
+            // Normalize the XML structure
             document.getDocumentElement().normalize();
 
-            // Get the root element
-            Element root = document.getDocumentElement();
+            // Get the list of all <record> elements
+            NodeList recordList = document.getElementsByTagName("record");
 
-            // Get a list of all elements with the specified tag name
-            NodeList nodeList = root.getElementsByTagName(fieldName);
+            // Create a JSONArray to store the extracted records
+            JSONArray jsonArray = new JSONArray();
 
-            // Iterate over the elements and print their values
-            for (int i = 0; i < nodeList.getLength(); i++) {
-                Node node = nodeList.item(i);
-                System.out.println(node.getTextContent());
+            // Iterate over each <record> element
+            for (int i = 0; i < recordList.getLength(); i++) {
+                Node recordNode = recordList.item(i);
+
+                if (recordNode.getNodeType() == Node.ELEMENT_NODE) {
+                    Element recordElement = (Element) recordNode;
+
+                    // Get the element by tag name
+                    NodeList fieldNodes = recordElement.getElementsByTagName(fieldName);
+
+                    // Add the field values to the JSONObject
+                    if (fieldNodes.getLength() > 0) {
+                        JSONObject jsonObject = new JSONObject();
+                        for (int j = 0; j < fieldNodes.getLength(); j++) {
+                            jsonObject.put(fieldName + (j + 1), fieldNodes.item(j).getTextContent());
+                        }
+                        jsonArray.put(jsonObject);
+                    }
+                }
             }
-        } catch (ParserConfigurationException | SAXException | IOException e) {
+
+            // Print the JSONArray in JSON format
+            System.out.println(jsonArray.toString(4)); // Indent with 4 spaces for readability
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 }
-
-
